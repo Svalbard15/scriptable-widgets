@@ -24,7 +24,7 @@ const BACKGROUND_IMAGE_FOLDER = "F1CountDown/car.jpg"
 // Ergast F1 API
 // API documentation  http://ergast.com/mrd/
 // 2022 Race Calendar http://ergast.com/api/f1/2022.json
-// *****************************************
+// *****************************************************
 // load the data for the next race
 const URL = "http://ergast.com/api/f1/current/next.json"
 
