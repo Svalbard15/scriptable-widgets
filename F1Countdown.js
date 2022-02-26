@@ -18,17 +18,18 @@ Date.prototype.addMinutes= function(minutes){
 }
 
 // adapt to your needs
-const BACKGROUND_IMAGE_FOLDER = "F1CountDown/car.jpg"
+const BACKGROUND_IMAGE_FOLDER = "F1Countdown/car.jpg"
 
 // *****************************************************
 // Ergast F1 API
 // API documentation  http://ergast.com/mrd/
 // 2022 Race Calendar http://ergast.com/api/f1/2022.json
 // *****************************************************
+
 // load the data for the next race
 const URL = "http://ergast.com/api/f1/current/next.json"
 
-// test data
+// test data to un-comment
 // zandvort
 // url = "http://ergast.com/api/f1/2022/15.json"
 // monza
@@ -121,7 +122,7 @@ function createWidget(daysRemaining, backgroundImagePath, race, raceData, raceDa
   // Avenir Book 96
   // Didot Bold 92
 
-  // make the font smaller for 3-digit numbers
+  // make the font smaller for 3-digit day numbers
   let countDownTextFontSize = 92
   if( numberOfDigits( daysRemaining ) > 2 )
   {
