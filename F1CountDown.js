@@ -1,6 +1,6 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: green; icon-glyph: magic;
+// icon-color: cyan; icon-glyph: globe;
 
 // needs to be above usage... not sure why
 /**
@@ -10,34 +10,37 @@
  * 
  * @param {number} minutes
 */
- Date.prototype.addMinutes= function(minutes){
+// currently not in use (line 382)
+Date.prototype.addMinutes= function(minutes){
   let copiedDate = new Date(this.getTime());
   copiedDate.setMinutes(copiedDate.getMinutes()+minutes);
   return copiedDate;
 }
 
+// adapt to your needs
+const BACKGROUND_IMAGE_FOLDER = "F1CountDown/car.jpg"
 
-const backgroundImagePath = "F1CountDown/car.jpg"
-
-
+// *****************************************************
+// Ergast F1 API
+// API documentation  http://ergast.com/mrd/
+// 2022 Race Calendar http://ergast.com/api/f1/2022.json
 // *****************************************
-// API methods to load F1 schedule
-// http://ergast.com/mrd/methods/schedule/
-// *****************************************
-
 // load the data for the next race
-let url = "http://ergast.com/api/f1/current/next.json"
+const URL = "http://ergast.com/api/f1/current/next.json"
+
+// test data
 // zandvort
 // url = "http://ergast.com/api/f1/2022/15.json"
 // monza
 // url = "http://ergast.com/api/f1/2022/16.json"
-const data = await fetchJson(url);
+
+const data = await fetchJson( URL );
 
 // variable to hold the widget
 let widget = null;
 
-// was JSON load successful?
-if(data == undefined) {
+// Did the web service return JSON data?
+if( data == undefined ) {
 
   // error scenario
   // no data was received from the Web API
@@ -47,26 +50,24 @@ if(data == undefined) {
 
 } else {
 
-  // here: data was received from the webservice
-  // => build up the countdown widget
+  // we got data from the web service
+  // lets build up the countdown widget
 
   // extract race data from the JSON object
   const race = data.MRData.RaceTable.Races[0]
 
-  // raceId is a static element in data set per Ergast
+  // circuitId is a static element in the data set per Ergast
   // here used for resolving the time zone
-  // get timezone and shadowColor for location
+  // raceData contains timezone and shadowColor (for location)
   const raceData = getRaceData( race.Circuit.circuitId )
-  // const raceTimezone = raceData.timeZone
-
-  //
-  const deviceLocalStartDateTime = getLocalStartDateTime( race.date, race.time, raceData.timeZone )
-
-  // days remaining until the start of the race
-  const daysRemaining = calcDaysUntilDate( race.date )
   
-  // TODO - the last date needs to be the device local date and not the date at the race location
-  widget = createWidget( daysRemaining, backgroundImagePath, race, raceData, deviceLocalStartDateTime )
+  // get race date time at location of device/user
+  const deviceLocalStartDateTime = getDeviceLocalStartDateTime( race.date, race.time, raceData.timeZone )
+
+  // days remaining until the start of the race at the location of the device/user
+  const daysRemaining = calcDaysUntilDate( deviceLocalStartDateTime )
+  
+    widget = createWidget( daysRemaining, BACKGROUND_IMAGE_FOLDER, race, raceData, deviceLocalStartDateTime )
 
 }
 
@@ -78,7 +79,6 @@ if (config.runsInWidget) {
 else {
   widget.presentSmall()
 }
-
 
 
 /**
@@ -95,6 +95,7 @@ function createWidget(daysRemaining, backgroundImagePath, race, raceData, raceDa
   log("in create widget *********")
   log("daysRemaining " + daysRemaining)
   log("backgroundImagePath " + backgroundImagePath)
+  log("raceData " + JSON.stringify( raceData ) )
 
   let w = new ListWidget()
   
@@ -109,8 +110,6 @@ function createWidget(daysRemaining, backgroundImagePath, race, raceData, raceDa
   w.backgroundImage = image
   
     
-  // Color ideas https://github.com/yaylinda/scriptable
-
   // Other interesting fonts I tried
   // Futura 84
   // Futura Bold 72
@@ -209,6 +208,7 @@ function numberOfDigits(number) {
 function staticErrorWidget( row1, row2, row3) {
 
   let w = new ListWidget()
+  w.backgroundColor = Color.black();
 
   const topStack = w.addStack()
   topStack.setPadding(0,0,0,0)
@@ -257,30 +257,16 @@ function staticErrorWidget( row1, row2, row3) {
 
 
 
-// /**
-//  * Format Date for display
-//  * 
-//  * 
-//  * @param {} date
-//  */
-// function formatDateForDisplay(date) {
-//   return [
-//     // date.getFullYear(),
-//     date.getMonth() + 1,
-//     date.getDate(),
-//   ].join('/');
-// }
-
 
 /**
  * Returns the difference in days from now until the parameter future date
  *  
- * @param {String} dateStr - future date in parseable string format
+ * @param {String} futureDate - future date
 */
-function calcDaysUntilDate( dateStr )
+function calcDaysUntilDate( futureDate )
 {
   // date of future event
-  let futureDate = new Date( dateStr )
+  // let futureDate = new Date( dateStr )
   
   // current date
   let now = new Date() 
@@ -318,13 +304,13 @@ function getImageUrl(name)
  * Get Time Zone Name
  * 
  * This could have been solved through another webservice call
- * but I wanted to avoid having to register for another service
+ * but I wanted to avoid having to register for a(nother) service
  * possible option: Ergast provides lat/long of race location -> could have been used to look up time zone
  * 
  * data sources:
  * http://ergast.com/api/f1/2022.json
  * https://time.is
- * https://flagcolor.com (in some cases I looked at the Jersey colors of the National Football teams)
+ * https://flagcolor.com (in some cases I looked at the Jersey colors of the National Football teams) (And yes, it's called Football!)
  *  
  * @param {string} raceId - static per Ergast 
 */
@@ -356,7 +342,7 @@ function getRaceData( raceId ) {
     case "zandvoort": data = { "timeZone":"Europe/Amsterdam","shadowColor":"#ff9b00" }; break;// orange
     default: 
      text = "raceId not found in function getTimeZoneName( " + raceId +" )";
-      // To-Do throw an error somehow
+      // TODO throw an error
   }  
   return data;
 }
@@ -370,26 +356,30 @@ function getRaceData( raceId ) {
  * 
  * @param {string} raceDateStr - date of race as string from web service
  * @param {string} raceTimeStr - time of race as string from web service
- * @param {string} raceTimezone - timezone of the location of the race
+ * @param {string} raceTimezone - timezone at the location of the race
 */
-function getLocalStartDateTime(raceDateStr,raceTimeStr,raceTimezone) {
+function getDeviceLocalStartDateTime(raceDateStr,raceTimeStr,raceTimezone) {
 
-  // calculate the timezone offset bewteen race location and GMT
-  const raceDateAtLoc = new Date( raceDateStr )
-  const raceLocTzOffset = getTimeZoneOffset( raceDateAtLoc, raceTimezone )
+  // seems to be all not needed
+  // TODO - more testing for other race locations at race dates
+  // ***********************************************************
 
-  // calculate the timezone offset bewteen the current device location and GMT
-  const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const localTzOffset = getTimeZoneOffset( raceDateAtLoc , localTimeZone )
+  // // calculate the timezone offset bewteen race location and GMT
+  // const raceDateAtLoc = new Date( raceDateStr )
+  // const raceLocTzOffset = getTimeZoneOffset( raceDateAtLoc, raceTimezone )
 
-  // calculate the difference between device location and race timezones in minutes
-  const timeOffsetToRaceLoc = raceLocTzOffset - localTzOffset
+  // // calculate the timezone offset bewteen the current device location and GMT
+  // const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  // const localTzOffset = getTimeZoneOffset( raceDateAtLoc , localTimeZone )
+
+  // // calculate the difference between device location and race timezones in minutes
+  // const timeOffsetDeviceToRaceLocation = raceLocTzOffset - localTzOffset
 
   //adjust race date time by offset to get local start time
   const localStartTime = new Date( raceDateStr + "T" + raceTimeStr )
-  // log( "local start time: " + localStartTime )
+  log( "local start time: " + localStartTime )
 
-  // let lst = localStartTime.addMinutes( timeOffsetToRaceLoc )
+  // ***REALLY INCORRECT?*** let lst = localStartTime.addMinutes( timeOffsetDeviceToRaceLocation )
   // log( "LST + offset minutes: " + lst )
 
   return localStartTime;
@@ -419,7 +409,9 @@ function getTimeZoneOffset(date, timeZone) {
   // Return the difference in timestamps, as minutes
   // Positive values are West of GMT, opposite of ISO 8601
   // this matches the output of `Date.getTimeZoneOffset`
-  return -(lie - date) / 60 / 1000;
+
+  // 60000 = 60s * 1000ms
+  return -(lie - date) / 60000;
 }
 
 //-------------------------------------
@@ -439,7 +431,10 @@ async function fetchJson(url) {
      const resp = await req.loadJSON();
      return resp;
     } catch (error) {
+    // if I log this to error console I don't see the error widget
     //  console.error(`Could not load url: ${url}`)
     //  console.error(`error: ${JSON.stringify(error)}`)
+    // so logging this to the standard console
+      log(`Could not load url: ${url}`)
     }
 }
