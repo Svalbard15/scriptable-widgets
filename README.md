@@ -12,6 +12,8 @@
 1. It should recognize the F1Countdown.js file and create a button "F1Countdown"
 1. Click the F1Countdown button and you get this:
 
+![widget](https://github.com/Svalbard15/scriptable-widgets/blob/main/widget.png "F1 Countdown widget")
+
 
 
 
