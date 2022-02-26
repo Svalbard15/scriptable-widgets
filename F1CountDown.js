@@ -10,7 +10,7 @@
  * 
  * @param {number} minutes
 */
-// currently not in use (line 382)
+// currently not in use (line 376)
 Date.prototype.addMinutes= function(minutes){
   let copiedDate = new Date(this.getTime());
   copiedDate.setMinutes(copiedDate.getMinutes()+minutes);
@@ -53,11 +53,11 @@ if( data == undefined ) {
   // we got data from the web service
   // lets build up the countdown widget
 
-  // extract race data from the JSON object
+  // extract the race from the JSON object
   const race = data.MRData.RaceTable.Races[0]
 
   // circuitId is a static element in the data set per Ergast
-  // here used for resolving the time zone
+  // here used for resolving the time zone which I provided in code
   // raceData contains timezone and shadowColor (for location)
   const raceData = getRaceData( race.Circuit.circuitId )
   
@@ -67,7 +67,7 @@ if( data == undefined ) {
   // days remaining until the start of the race at the location of the device/user
   const daysRemaining = calcDaysUntilDate( deviceLocalStartDateTime )
   
-    widget = createWidget( daysRemaining, BACKGROUND_IMAGE_FOLDER, race, raceData, deviceLocalStartDateTime )
+  widget = createWidget( daysRemaining, BACKGROUND_IMAGE_FOLDER, race, raceData, deviceLocalStartDateTime )
 
 }
 
@@ -81,8 +81,12 @@ else {
 }
 
 
+//-------------------------------------
+// Widget Specific Helper Functions
+//-------------------------------------
+
 /**
- * builds up the widget
+ * returns the fully styled widget
  *  
  * @param {number} daysRemaining - days remaining until start of race 
  * @param {string} backgroundImagePath - the background image
@@ -152,25 +156,24 @@ function createWidget(daysRemaining, backgroundImagePath, race, raceData, raceDa
   const location = race.Circuit.Location.locality
   const country = race.Circuit.Location.country
 
-  // column 1
-  //                                       row1              row2 
+  // column 1 -----------------------------------------------------------
+  //                                        row1              row2 
   const locationText = bottomStack.addText( location + "\n" + country) 
   locationText.font = Font.boldSystemFont( 14 )
   locationText.textColor = Color.white()
   locationText.shadowColor = new Color( raceData.shadowColor )
   locationText.shadowRadius = 3
-  locationText.textOpacity = 0.8
+  locationText.textOpacity = 0.9
   locationText.leftAlignText()
   bottomStack.addSpacer()
-
   
-  // format the race location and date at the bottom of the widget
-  // help with the local: https://github.com/mzeryck/Weather-Cal/blob/main/weather-cal-code.js
+  // apply the device local format to the race month and date
+  // localization: https://github.com/mzeryck/Weather-Cal/blob/main/weather-cal-code.js
   // date time format cheat sheet: https://devhints.io/wip/intl-datetime
-  const month = new Intl.DateTimeFormat( this.locale, { month: 'short' }).format(raceDateAtDeviceLocation)
-  const day = new Intl.DateTimeFormat( this.locale, { day: 'numeric' }).format(raceDateAtDeviceLocation)
+  const month = new Intl.DateTimeFormat( this.locale, { month: 'short' }).format( raceDateAtDeviceLocation )
+  const day = new Intl.DateTimeFormat( this.locale, { day: 'numeric' }).format( raceDateAtDeviceLocation )
 
-  // column 2
+  // column 2 -----------------------------------------------------------
   //                                    row1         row2 
   const dateText = bottomStack.addText( day + "\n" + month ) // + "\n" ) 
   dateText.font = Font.boldSystemFont( 14 )
@@ -178,16 +181,12 @@ function createWidget(daysRemaining, backgroundImagePath, race, raceData, raceDa
 
   dateText.shadowColor = new Color( raceData.shadowColor )
   dateText.shadowRadius = 3
-  dateText.textOpacity = 0.8
+  dateText.textOpacity = 0.9
   dateText.rightAlignText()
 
   return w
 }
 
-
-//-------------------------------------
-// Widget Specific Helper Functions
-//-------------------------------------
 
 /**
  * Returns the number of digits of the parameter number
@@ -205,7 +204,7 @@ function numberOfDigits(number) {
 /**
  * Static error widget
 */
-function staticErrorWidget( row1, row2, row3) {
+function staticErrorWidget( row1, row2, row3 ) {
 
   let w = new ListWidget()
   w.backgroundColor = Color.black();
@@ -251,11 +250,6 @@ function staticErrorWidget( row1, row2, row3) {
 
   return w
 }
-
-
-
-
-
 
 
 /**
