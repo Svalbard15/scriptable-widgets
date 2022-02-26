@@ -14,7 +14,7 @@
 1. Check if the folder "Scriptable" was created in your iCloud app
 1. Copy the source code of the file [`F1Countdown.js`](/F1Countdown.js)` into the "Scriptable" folder in the iCloud app ([raw JS here](https://raw.githubusercontent.com/Svalbard15/scriptable-widgets/main/F1Countdown.js))
 1. Create a folder "F1Countdown" at the same level of the `F1Countdown.js` file 
-1. In that folder store a (square) background image for the widget and name it `car.jpg` (idea: [here](https://www.autosport.com/f1/news/f1-2022-cars-wont-bring-better-racing-overnight-fia/6630755/)) - just square the image. You also find suitable images from the 2022 launch events on https://twitter.com/f1
+1. In that folder store a (square) background image for the widget and name it `car.jpg` - just square the image. You find suitable images from the 2022 launch events on https://twitter.com/f1
 1. Lauch scriptable on your phone
 1. It should recognize the `F1Countdown.js` file and create a button "F1Countdown"
 1. Click the F1Countdown button to see a preview
