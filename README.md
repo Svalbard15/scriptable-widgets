@@ -5,7 +5,7 @@
 
 ## Features:
 
-* The widget loads the race schedule from https://ergast.com/mrd/ and shows the countdown in days to the next race
+* The widget loads the race schedule from https://ergast.com/mrd/ and shows the countdown in days until the next race
 
 
 ### How to use this widget?
