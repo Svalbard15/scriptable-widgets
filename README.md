@@ -3,10 +3,13 @@
 
 ![widget](https://github.com/Svalbard15/scriptable-widgets/blob/main/widget40.png "F1 Countdown widget")
 
+<br/>
+
 ## Features:
 
 * The widget loads the race schedule from https://ergast.com/mrd/ and shows the countdown in days until the next race
 
+<br/>
 
 ### How to use this widget?
 
@@ -19,6 +22,7 @@
 1. It should recognize the `F1Countdown.js` file and create a button "F1Countdown"
 1. Click the F1Countdown button to see a preview
 
+<br/>
 
 ### Putting the widget on your home screen
 
@@ -31,7 +35,7 @@
 
 And that's it. 
 
-
+<br/>
 
 ## Remaining To-Do's for version 0.2:
 * add an hourly countdown for the last 24 hours before the race
