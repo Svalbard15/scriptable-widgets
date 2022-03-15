@@ -2,23 +2,11 @@
 // These must be at the very top of the file. Do not edit.
 // icon-color: cyan; icon-glyph: globe;
 
-// needs to be above usage... not sure why
-/**
- * adds Minutes to a date
- * 
- * Source: https://stackoverflow.com/questions/1050720/adding-hours-to-javascript-date-object
- * 
- * @param {number} minutes
-*/
-// currently not in use (line 376)
-Date.prototype.addMinutes= function(minutes){
-  let copiedDate = new Date(this.getTime());
-  copiedDate.setMinutes(copiedDate.getMinutes()+minutes);
-  return copiedDate;
-}
-
 // adapt to your needs
 const BACKGROUND_IMAGE_FOLDER = "F1Countdown/car.jpg"
+
+const ONE_DAY_IN_MS  = 86400000 // (1000ms * 60s * 60m * 24h)
+const ONE_HOUR_IN_MS =  3600000 // (1000ms * 60s * 60m)
 
 // *****************************************************
 // Ergast F1 API
@@ -27,7 +15,7 @@ const BACKGROUND_IMAGE_FOLDER = "F1Countdown/car.jpg"
 // *****************************************************
 
 // load the data for the next race
-const URL = "http://ergast.com/api/f1/current/next.json"
+let URL = "http://ergast.com/api/f1/current/next.json"
 
 // test data to un-comment
 // zandvort
@@ -38,7 +26,7 @@ const URL = "http://ergast.com/api/f1/current/next.json"
 const data = await fetchJson( URL );
 
 // variable to hold the widget
-let widget = null;
+let widget = undefined;
 
 // Did the web service return JSON data?
 if( data == undefined ) {
@@ -54,26 +42,20 @@ if( data == undefined ) {
   // we got data from the web service
   // lets build up the countdown widget
 
-  // extract the race from the JSON object
+  // extract the next race from the JSON object
   const race = data.MRData.RaceTable.Races[0]
 
-  // circuitId is a static element in the data set per Ergast
+  // Per Ergast: the circuitId is a static element in the data set 
   // here used for resolving the time zone which I provided in code
   // raceData contains timezone and shadowColor (for location)
   const raceData = getRaceData( race.Circuit.circuitId )
-  
-  // get race date time at location of device/user
-  const deviceLocalStartDateTime = getDeviceLocalStartDateTime( race.date, race.time, raceData.timeZone )
 
-  // days remaining until the start of the race at the location of the device/user
-  const daysRemaining = calcDaysUntilDate( deviceLocalStartDateTime )
-  
-  widget = createWidget( daysRemaining, BACKGROUND_IMAGE_FOLDER, race, raceData, deviceLocalStartDateTime )
-
+  // call function to build the widget
+  widget = createWidget( BACKGROUND_IMAGE_FOLDER, race, raceData )
 }
 
+// display the widget
 if (config.runsInWidget) {
-
   Script.setWidget(widget)
   Script.complete()
 } 
@@ -89,84 +71,117 @@ else {
 /**
  * returns the fully styled widget
  *  
- * @param {number} daysRemaining - days remaining until start of race 
  * @param {string} backgroundImagePath - the background image
  * @param {object} race - the race data from the web service call
  * @param {object} raceData - the race data with timezone and color
- * @param {Date} raceDateAtDeviceLocation - the race data with timezone and color
 */
-function createWidget(daysRemaining, backgroundImagePath, race, raceData, raceDateAtDeviceLocation ) {
+function createWidget( backgroundImagePath, race, raceData ) {
 
-  log("in create widget *********")
-  log("daysRemaining " + daysRemaining)
-  log("backgroundImagePath " + backgroundImagePath)
-  log("raceData " + JSON.stringify( raceData ) )
-
-  let w = new ListWidget()
+  let widget = new ListWidget()
   
   // paddign between edge of widget and start of elements in the widget
-  w.setPadding(4,4,4,4)
-  w.backgroundColor = Color.black();
-
+  widget.setPadding(4,6,10,6)
+  widget.backgroundColor = new Color( "#468499" )
+  
   // set background image
   // TODO - test if image is there
-  const imageUrl = getImageUrl( backgroundImagePath );
-  const image = Image.fromFile( imageUrl ); 
-  w.backgroundImage = image
+  const imageUrl = getImageUrl( backgroundImagePath )
+  const image = Image.fromFile( imageUrl )
+  widget.backgroundImage = image
+
+  // get race date (time) at location of device/user
+  let raceDateAtDeviceLocation = getDeviceLocalStartDateTime( race.date, race.time, raceData.timeZone )
   
-    
-  // Other interesting fonts I tried
+  // * TEST DATA ************************************************************
+  // "date":"2022-03-20","time":"15:00:00Z"
+  // raceDateAtDeviceLocation = new Date( "2022-03-15" + "T" + "02:00:00Z" )
+
+  let timeRemainingMs = calcMsUntilEvent( raceDateAtDeviceLocation )
+
+  const WHITE = "#ffffff"
+  const CYAN = "#00ffff"
+  const FONT_NAME = "AvenirNext-DemiBold"
+  const SMALL_FONT_NAME = FONT_NAME
+
+  // Other interesting fonts
   // Futura 84
   // Futura Bold 72
   // Chalkboard SE 96
   // Avenir Book 96
   // Didot Bold 92
 
-  // make the font smaller for 3-digit day numbers
-  let countDownTextFontSize = 92
-  if( numberOfDigits( daysRemaining ) > 2 )
-  {
-    countDownTextFontSize = 72
+  let timeRemaining = -1;
+
+    if( timeRemainingMs > ONE_DAY_IN_MS ) {
+
+    // here we have days left (more than 24 hours) **************************************
+    timeRemaining = Math.floor( timeRemainingMs / ONE_DAY_IN_MS )
+
+    // - no headline
+    // - center cell: show remaining days
+
+    // make the font smaller for 3-digit day numbers
+    let countDownTextFontSize = 82
+    if( numberOfDigits( timeRemaining ) > 2 ) {
+      countDownTextFontSize = 64
+    }
+
+    widget.addSpacer();
+
+    // center cell: display countdown number in days
+    addSingleCenteredCell( widget, timeRemaining.toString() , FONT_NAME, countDownTextFontSize, WHITE, CYAN, 3 )
+
+    // - bottom cell: use default below
+
+  } else if( timeRemainingMs > ONE_HOUR_IN_MS ) {
+      
+      // here we have less than 24 hours, but more than 2 hours left ********************
+
+      timeRemaining = Math.floor( timeRemainingMs / ONE_HOUR_IN_MS )
+
+      widget.addSpacer();
+
+      // - headline: Today!
+      addSingleCenteredCell( widget, "TODAY!", FONT_NAME , 22, WHITE, CYAN, 3 )
+      
+      widget.addSpacer();
+      widget.addSpacer();
+
+      // - center cell: show hour countdown
+      addSingleCenteredCell( widget, timeRemaining.toString() + " hrs", FONT_NAME, 36, WHITE, CYAN, 3 )
+    
+      widget.addSpacer();
+      widget.addSpacer();
+
+      // - bottom cell: use default below
+
+  } else {      
+
+      // here we have less than 1 hours left ********************************************
+            
+      timeRemaining = Math.floor( timeRemainingMs / ONE_HOUR_IN_MS )
+
+      widget.addSpacer();
+      // - headline: Today!
+      addSingleCenteredCell( widget, "TODAY!", FONT_NAME , 22, WHITE, CYAN, 3 )
+      
+      widget.addSpacer();
+      widget.addSpacer();
+      widget.addSpacer();
+
+      const time = new Intl.DateTimeFormat( this.locale, { hour: 'numeric', minute: 'numeric' }).format( raceDateAtDeviceLocation )
+      // - center cell: show local race time
+      addSingleCenteredCell( widget, time, FONT_NAME, 24, WHITE, CYAN, 3 )
+    
+      widget.addSpacer();
+      widget.addSpacer();
+      widget.addSpacer();
   }
 
-  // Top Stack for the big countdown number
-  const topStack = w.addStack()
-  topStack.setPadding(0,0,0,0)
-  topStack.addSpacer()
-  topStack.topAlignContent()
+  // create the 2 bottom rows:
 
-  // create and format the BIG count down number
-  const countDownText = topStack.addText( daysRemaining.toString() )
-  countDownText.font = new Font( "Futura PT Cond Bold", countDownTextFontSize )
-  countDownText.textColor = Color.white()
-  countDownText.shadowColor = Color.cyan()
-  countDownText.shadowRadius = 3
-  countDownText.centerAlignText()
-
-  topStack.addSpacer()
-
-
-  // Bottom Stack for location, country, date, time
-  const bottomStack = w.addStack()
-  bottomStack.setPadding(0,0,0,0)
-  bottomStack.layoutHorizontally()
-  bottomStack.bottomAlignContent()
-  // bottomRows.addSpacer()
-
-  // format the race location and date at the bottom of the widget
   const location = race.Circuit.Location.locality
   const country = race.Circuit.Location.country
-
-  // column 1 -----------------------------------------------------------
-  //                                        row1              row2 
-  const locationText = bottomStack.addText( location + "\n" + country) 
-  locationText.font = Font.boldSystemFont( 14 )
-  locationText.textColor = Color.white()
-  locationText.shadowColor = new Color( raceData.shadowColor )
-  locationText.shadowRadius = 3
-  locationText.textOpacity = 0.9
-  locationText.leftAlignText()
-  bottomStack.addSpacer()
   
   // apply the device local format to the race month and date
   // localization: https://github.com/mzeryck/Weather-Cal/blob/main/weather-cal-code.js
@@ -174,33 +189,16 @@ function createWidget(daysRemaining, backgroundImagePath, race, raceData, raceDa
   const month = new Intl.DateTimeFormat( this.locale, { month: 'short' }).format( raceDateAtDeviceLocation )
   const day = new Intl.DateTimeFormat( this.locale, { day: 'numeric' }).format( raceDateAtDeviceLocation )
 
-  // column 2 -----------------------------------------------------------
-  //                                    row1         row2 
-  const dateText = bottomStack.addText( day + "\n" + month ) // + "\n" ) 
-  dateText.font = Font.boldSystemFont( 14 )
-  dateText.textColor = Color.white()
+  // widget.addSpacer();
 
-  dateText.shadowColor = new Color( raceData.shadowColor )
-  dateText.shadowRadius = 3
-  dateText.textOpacity = 0.9
-  dateText.rightAlignText()
+  // 2 bottom rows for location and date
+  addRowWTwoColumns( widget, location, day, SMALL_FONT_NAME, 14, WHITE, raceData.shadowColor, 3 )
+  addRowWTwoColumns( widget, country, month, SMALL_FONT_NAME, 14, WHITE, raceData.shadowColor, 3 )
 
-  return w
+  widget.addSpacer();
+
+  return widget
 }
-
-
-/**
- * Returns the number of digits of the parameter number
- * better performance than number.toString().length
- * 
- * source/author: https://stackoverflow.com/questions/14879691/get-number-of-digits-with-javascript/28203456#28203456
- * 
- * @param {number} number
- */
-function numberOfDigits(number) {
-  return (Math.log10((number ^ (number >> 31)) - (number >> 31)) | 0) + 1;
-}
-
 
 /**
  * Static error widget
@@ -253,32 +251,78 @@ function staticErrorWidget( row1, row2, row3 ) {
 }
 
 
-/**
- * Returns the difference in days from now until the parameter future date
- *  
- * @param {String} futureDate - future date
-*/
-function calcDaysUntilDate( futureDate )
-{
-  // date of future event
-  // let futureDate = new Date( dateStr )
-  
-  // current date
-  let now = new Date() 
-  // only use date for calculation, erase time
-  now.setHours( 0, 0, 0, 0 );
-  
-  //today.setHours( futureDate.getHours(), futureDate.getMinutes(), futureDate.getSeconds(), futureDate.getMilliseconds() );
-  //log('h:' + futureDate.getHours())
-  //log('m:' + futureDate.getMinutes())
-  //log('s:' + futureDate.getSeconds())
-  //log('ms:' + futureDate.getMilliseconds())
+//-------------------------------------
+// Layout Helper Functions
+//-------------------------------------
 
-  let diff_ms = futureDate.getTime() - now.getTime()
-  // 1 day = 86400000ms (1000ms * 60s * 60m * 24h)
-  let diff_days = Math.round( diff_ms / 86400000 )
-  // diff_day++ // compensate for hours
-  return diff_days
+/**
+ * returns a widget row that is centered
+ *  
+ * @param {object} parent - the object that this text attaches to
+ * @param {String} text - the text displayed
+ * @param {String} fontName - the name of the font to style the text
+ * @param {String} fontSize - the size of the font to style the text
+ * @param {String} textColor - the color of the text displayed
+ * @param {String} shadowColor - the color of the shadow of the text displayed
+ * @param {number} shadowRadius - the radius of the shadow of the text displayed
+*/
+function addSingleCenteredCell(parent,text,fontName,fontSize,textColor,shadowColor,shadowRadius) {
+
+  const styledText = parent.addText( text );
+  styledText.font = new Font( fontName, fontSize );
+  styledText.centerAlignText();
+  if( textColor != undefined ){
+    styledText.textColor = new Color( textColor )
+  }
+  if( shadowColor != undefined ){
+    styledText.shadowColor = new Color( shadowColor)
+  }
+  if( shadowRadius != undefined ){
+    styledText.shadowRadius = shadowRadius
+  }
+  
+}
+
+
+/**
+ * returns a widget row that is centered
+ *  
+ * @param {object} parent - the object that this text attaches to
+ * @param {String} textLeft - the text displayed in the left column
+ * @param {String} textRight - the text displayed in the right column
+ * @param {String} fontName - the name of the font to style the text
+ * @param {String} fontSize - the size of the font to style the text
+ * @param {String} textColor - the color of the text displayed
+ * @param {String} shadowColor - the color of the shadow of the text displayed
+ * @param {number} shadowRadius - the radius of the shadow of the text displayed
+*/
+function addRowWTwoColumns(parent,textLeft,textRight,fontName,fontSize,textColor,shadowColor,shadowRadius) {
+
+  // horizontal alignment is default for stacks
+  const row = parent.addStack();
+  row.setPadding(0,0,0,0)
+  
+  // left column
+  addSingleCenteredCell( row, textLeft, fontName, fontSize, textColor, shadowColor, shadowRadius)
+
+  row.addSpacer();
+
+  // right column
+  addSingleCenteredCell( row, textRight, fontName, fontSize, textColor, shadowColor, shadowRadius)
+
+}
+
+
+/**
+ * Returns the number of digits of the parameter number
+ * better performance than number.toString().length
+ * 
+ * source/author: https://stackoverflow.com/questions/14879691/get-number-of-digits-with-javascript/28203456#28203456
+ * 
+ * @param {number} number
+ */
+ function numberOfDigits(number) {
+  return (Math.log10((number ^ (number >> 31)) - (number >> 31)) | 0) + 1;
 }
 
 
@@ -294,6 +338,10 @@ function getImageUrl(name)
   return fm.joinPath(dir, `${name}`);
 }
 
+
+//-------------------------------------
+// Date/Time Helper Functions
+//-------------------------------------
 
 /**
  * Get Time Zone Name
@@ -342,9 +390,78 @@ function getRaceData( raceId ) {
   return data;
 }
 
-//-------------------------------------
-// Date/Time Helper Functions
-//-------------------------------------
+
+/**
+ * Returns the difference in ms from now until the parameter future date
+ *  
+ * @param {String} futureDate - future date
+*/
+function calcMsUntilEvent( futureDate )
+{
+  // date of future event
+  // let futureDate = new Date( dateStr )
+  
+  // current date
+  let now = new Date() 
+  // only use date for calculation, erase time
+  // now.setHours( 0, 0, 0, 0 );
+  
+  //today.setHours( futureDate.getHours(), futureDate.getMinutes(), futureDate.getSeconds(), futureDate.getMilliseconds() );
+  //log('h:' + futureDate.getHours())
+  //log('m:' + futureDate.getMinutes())
+  //log('s:' + futureDate.getSeconds())
+  //log('ms:' + futureDate.getMilliseconds())
+
+  let diff_ms = futureDate.getTime() - now.getTime()
+  // 1 day = 86400000ms (1000ms * 60s * 60m * 24h)
+  // let diff_days = Math.round( diff_ms / 86400000 )
+  // diff_day++ // compensate for hours
+  return diff_ms
+}
+
+
+/**
+ * Returns the difference in days from now until the parameter future date
+ *  
+ * @param {String} futureDate - future date
+*/
+function calcDaysUntilDate( futureDate )
+{
+  // date of future event
+  // let futureDate = new Date( dateStr )
+  
+  // current date
+  let now = new Date() 
+  // only use date for calculation, erase time
+  // now.setHours( 0, 0, 0, 0 );
+  
+  //today.setHours( futureDate.getHours(), futureDate.getMinutes(), futureDate.getSeconds(), futureDate.getMilliseconds() );
+  //log('h:' + futureDate.getHours())
+  //log('m:' + futureDate.getMinutes())
+  //log('s:' + futureDate.getSeconds())
+  //log('ms:' + futureDate.getMilliseconds())
+
+  let diff_ms = futureDate.getTime() - now.getTime()
+  // 1 day = 86400000ms (1000ms * 60s * 60m * 24h)
+  let diff_days = Math.round( diff_ms / 86400000 )
+  // diff_day++ // compensate for hours
+  return diff_days
+}
+
+/**
+ * Returns the difference in hours from now until the parameter future date
+ *  
+ * @param {String} futureDate - future date
+*/
+function calcHoursUntilEvent( futureDate )
+{
+  // current date
+  let now = new Date() 
+  let diff_ms = futureDate.getTime() - now.getTime()
+
+  // return difference in hours
+  return Math.round( diff_ms / ONE_HOUR_IN_MS )
+}
 
 /**
  * Calculates local start time at device location
