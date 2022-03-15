@@ -2,8 +2,8 @@
 # F1 Countdown widget
 
 ![widget](https://github.com/Svalbard15/scriptable-widgets/blob/main/widget40.png "F1 Countdown Widget Days")
-![widget](https://github.com/Svalbard15/scriptable-widgets/blob/main/IMG_316.jpg "F1 Countdown Widget Hours")
-![widget](https://github.com/Svalbard15/scriptable-widgets/blob/main/IMG_317.jpg "F1 Countdown Widget Start Time")
+![widget](https://github.com/Svalbard15/scriptable-widgets/blob/main/IMG_0316.jpg "F1 Countdown Widget Hours")
+![widget](https://github.com/Svalbard15/scriptable-widgets/blob/main/IMG_0317.jpg "F1 Countdown Widget Start Time")
 
 <br/>
 
