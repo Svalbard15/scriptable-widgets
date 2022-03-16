@@ -31,7 +31,7 @@
 1. Touch and hold the Home Screen background where you want to add the widget until the apps begin to jiggle
 1. Click (+)
 1. Select Scriptable, then select the small square widget and place it on your home screen
-1. Hold down the widget until the dialog appears, click "Edit Widget"
+1. Now touch and hold down the widget until the dialog appears, click "Edit Widget"
 1. Select "F1Countdown" as Script
 1. When Interacting select "Run Script"
 
