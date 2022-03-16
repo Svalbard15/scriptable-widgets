@@ -16,7 +16,7 @@
 ### How to use this widget?
 
 1. Install Scriptable from the [app store](https://apps.apple.com/us/app/scriptable/id1405459188)
-1. Check if the folder "Scriptable" was created in your iCloud app
+1. Check if the folder "Scriptable" was created in your iCloud (app)
 1. Copy the source code of the file [`F1Countdown.js`](/F1Countdown.js) into the "Scriptable" folder in the iCloud app ([raw JS here](https://raw.githubusercontent.com/Svalbard15/scriptable-widgets/main/F1Countdown.js))
 1. Create a folder "F1Countdown" at the same level as the `F1Countdown.js`-file 
 1. Upload your (square) background image into the new folder with the name `car.jpg`. You'll find suitable images [here](https://duckduckgo.com/?q=2022+formula+one+new+car&t=ffab&atb=v301-1&iar=images&iax=images&ia=images&iaf=layout%3ASquare) or [here](https://twitter.com/f1)
