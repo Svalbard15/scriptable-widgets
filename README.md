@@ -10,6 +10,9 @@
 ## Features:
 
 * The widget loads the race schedule from https://ergast.com/mrd/ and shows the countdown in days until the next race
+* If the next race is more than 1 day out it will show the number of days until the next race
+* If it's less than 24h until the start the widget will count down the hours
+* Within 1h of start it will show the local start time
 
 <br/>
 
